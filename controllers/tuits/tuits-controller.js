@@ -1,5 +1,8 @@
-import posts from "./tuits.js";
-let tuits = posts;
+// import posts from "./tuits.js";
+// let tuits = posts;
+import * as tuitsDao from './tuits-dao.js';
+
+
 
 
 const TuitController = (app) => {
@@ -9,37 +12,56 @@ const TuitController = (app) => {
     app.delete('/api/tuits/:tid', deleteTuit);
    }
    
-const createTuit = (req, res) => {
+
+// Mongose model interacts with the MongoDB database asynchronously,
+// we'll need to add async to all the functions in tuits-controller
+
+
+/**
+ * not using array anymore, actual tuits inserted into database with DAO's 
+ * createTuit respond with actual tuit inserted tuit
+ */
+const createTuit = async (req, res) => {
     const newTuit = req.body;
-    newTuit._id = (new Date()).getTime() + "";
+    // newTuit._id = (new Date()).getTime() + "";
     newTuit.likes = 0;
     newTuit.liked = false;
-    tuits.push(newTuit);
-    res.json(newTuit);
+    // tuits.push(newTuit);
+    const insertedTuit = await tuitsDao.createTuit(newTuit);
+    res.json(insertedTuit);
 
 }
-const findTuits  = (req, res) => {
-    res.json(tuits); 
+
+/**
+ * now it's asynchronous function, retrieve tuits from database
+ */
+const findTuits  = async (req, res) => {
+    const tuits = await tuitsDao.findTuits();           
+    res.json(tuits);                                
 }
 
-
-const updateTuit = (req, res) => {
+/**
+ * 
+ */
+const updateTuit = async (req, res) => {
     const tuitdIdToUpdate = req.params['tid'];
     const updates = req.body;
-    const tuitIndex = tuits.findIndex(tuit => tuit._id === tuitdIdToUpdate);
-    // tuits = tuits.map(tuit => 
-    //     tuit._id === tuitdIdToUpdate ? 
-    //     {...tuit[tuitIndex], ...updates} : 
-    //     tuit);
-    tuits[tuitIndex] = {...tuits[tuitIndex], ...updates};
-
-    res.sendStatus(200);
+    // const tuitIndex = tuits.findIndex(tuit => tuit._id === tuitdIdToUpdate);
+    // tuits[tuitIndex] = {...tuits[tuitIndex], ...updates};
+    const status = await tuitsDao.updateTuit(tuitdIdToUpdate, updates)
+    res.json(status);
 }
-const deleteTuit = (req, res) => {
+
+/**
+ * status reports success or failure to delete record from database
+ * no longer using array
+ * respond with status object
+ */
+const deleteTuit = async (req, res) => {
     const tuitId = req.params['tid'];
-    tuits = tuits.filter(tuit => tuit._id !== tuitId);
-    res.sendStatus(200);
-    
+    // tuits = tuits.filter(tuit => tuit._id !== tuitId);
+    const status = await tuitsDao.deleteTuit(tuitId)
+    res.json(status);
 }
 
 export default TuitController; 
